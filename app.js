@@ -14,50 +14,6 @@ let usuarios = [
     { id: 5, nombre: 'Blanka', edad: 32, lugarProcedencia: 'Brasil' },
 ];
 
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>Lista de usuarios</h1>
-        <ul>
-        ${usuarios.map((usuario) => `<li>ID: <b>${usuario.id}</b> | <b>Nombre:</b> ${usuario.nombre} | <b>Edad:</b> ${usuario.edad} | <b>LugarProcedencia:</b> ${usuario.lugarProcedencia}</li>`).join('')}
-        </ul>
-        <form action="/usuarios" method="post">
-            <label for="nombre">Nombre:</label>
-            <input type="text" id="nombre" name="nombre" required>
-            <label for="edad">Edad:</label>
-            <input type="number" id="edad" name="edad" required>
-            <label for="lugarProcedencia">Lugar de Procedencia:</label>
-            <input type="text" id="lugarProcedencia" name="lugarProcedencia" required>
-            <button type="submit">Agregar usuario</button>
-        </form>
-        <form action="/usuarios" method="get">
-            <label for="nombre">Buscar usuario por nombre:</label>
-            <input type="text" id="nombre" name="nombre" required>
-            <button type="submit">Buscar usuario</button>
-        </form>
-        <a href="/usuarios">Usuario json</a>
-        `)
-});
-
-
-//Obtener usuario por nombre
-app.get('/usuarios', (req, res) => {
-    if (req.query.nombre) {
-        const nombre = req.query.nombre.toLowerCase();
-        const usuario = usuarios.find(u => u.nombre.toLowerCase() === nombre.toLowerCase());
-        if (!usuario) {
-            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
-        }
-        return res.send(`
-            <h1>Lista de usuarios</h1>
-            <ul>
-                <li>ID: <b>${usuario.id}</b> | <b>Nombre:</b> ${usuario.nombre} | <b>Edad:</b> ${usuario.edad} | <b>LugarProcedencia:</b> ${usuario.lugarProcedencia}</li>
-            </ul>
-            <a href="/">Página principal</a>
-        `);
-    }
-    res.json(usuarios);
-});
-
 //Introducir un nuevo usuario
 app.post('/usuarios', (req, res) => {
     const nuevoUsuario = {
@@ -67,7 +23,50 @@ app.post('/usuarios', (req, res) => {
       lugarProcedencia: req.body.lugarProcedencia
     };
     usuarios.push(nuevoUsuario);
-    res.redirect('/');
+    res.redirect('/usuarios');
+});
+
+//Obtener usuario por nombre
+app.get('/usuarios/:nombre', (req, res) => {
+    const { nombre } = req.params;
+    const usuario = usuarios.find((user) => {user.nombre.toLowerCase() === nombre.toLowerCase()});
+    if (!usuario) {
+        return res.status(404).json({ error: 'Usuario no existe' });
+    }
+
+    res.json(usuario);
+});
+
+//Actualizar información usuario por nombre
+app.put('/usuarios/:nombre', (req, res) => {
+    const { nombre } = req.params;
+    const { edad, lugarProcedencia } = req.body;
+    const index = usuarios.findIndex(user => user.nombre.toLowerCase() === nombre.toLowerCase());
+    if (index === -1) {
+        return res.status(404).json({ error: 'Usuario no existe' });
+    }
+
+    if (edad) {
+        usuarios[index].edad = edad;
+    }
+
+    if (lugarProcedencia) {
+        usuarios[index].lugarProcedencia = lugarProcedencia;
+    }
+
+    res.json(usuarios[index]);
+})
+
+//Eliminar usuario por nombre
+app.delete('/usuarios/:nombre', (req, res) => {
+    const { nombre } = req.params;
+    const usuarioExiste = usuarios.some((user) => {user.nombre.toLowerCase() === nombre.toLowerCase()});
+    if (!usuarioExiste) {
+        return res.status(404).json({ error: 'Usuario no existe' });
+    }
+
+    usuarios = usuarios.filter(user => user.nombre.toLowerCase() !== nombre.toLowerCase())
+    res.json({ mensaje: `Usuario ${nombre} eliminado` });
 });
 
 //Iniciar servidor
